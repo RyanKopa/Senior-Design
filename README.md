@@ -1,2 +1,2 @@
-# Senior-Design
+# Senior Design
 EMS 188
