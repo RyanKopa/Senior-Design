@@ -22,7 +22,7 @@ le = LabelEncoder()
 trainLabels = le.fit_transform(trainData['labels'].values)
 validateLabels = le.fit_transform(validateData['labels'].values)
 
-drop_var = ['id', 'labels']
+drop_var = ['sampleID', 'labels']
 
 trainData = trainData.drop(drop_var, axis=1)
 validateData = validateData.drop(drop_var, axis=1)
