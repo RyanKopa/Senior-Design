@@ -10,8 +10,8 @@ import xgboost as xgb
 
 # pylint: disable=C0103
 
-dfTrain = pd.read_csv('')#to be filled in later
-labels = dfTrain[''].values
+dfTrain = pd.read_csv('GBM Analysis - Sheet1.csv')
+labels = dfTrain['labels'].values
 
 ### Feature Engineering here if necessary ###
 
