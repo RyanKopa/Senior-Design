@@ -1,5 +1,5 @@
 # Senior Design
-EMS 188A/B
+# # University of California, Davis EMS 188A/B
 
 This script will take data recorded from mechanical tests measuring the strength of gold ribbon bonding.  Data will be saved in a csv file with the following format:
 
