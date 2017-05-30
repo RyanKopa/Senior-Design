@@ -5,6 +5,4 @@ This script will take data recorded from mechanical tests measuring the strength
 
 sampleID,temperature,bondDuration,voltagePower,bondForce,bondMiddle,bondedArea,bondItself,labels,heelDeformation,centerDeformation,failureMode
 
-The features of the data are everything but the labels, which are apart the labels of the data set.  Labels are the failure mode of the bonds post-mechanical testing.
-
-GBM (XGBoost) is used to predict the failure modes of the bonds based on their bonding parameters.  Ideally, we are looking for heel break failure modes.
+GBM (XGBoost) is used to predict the failure modes of the bonds based on their bonding parameters.  Ideally, we are looking for heel break failure modes and strengths (labels) of greater than 6 grams force.
