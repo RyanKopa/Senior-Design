@@ -3,7 +3,7 @@
 
 This script will take data recorded from mechanical tests measuring the strength of gold ribbon bonding.  Data will be saved in a csv file with the following format:
 
-sampleID,temperature,bondDuration,voltagePower,bondForce,bondMiddle,bondedArea,bondItself,labels
+sampleID,temperature,bondDuration,voltagePower,bondForce,bondMiddle,bondedArea,bondItself,labels,heelDeformation,centerDeformation,failureMode
 
 The features of the data are everything but the labels, which are apart the labels of the data set.  Labels are the failure mode of the bonds post-mechanical testing.
 
