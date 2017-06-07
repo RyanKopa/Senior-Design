@@ -2,8 +2,27 @@
 # coding: utf-8
 
 # ### Model that will predict strength of bond based on bonding parameters
+# Currently data is read from a csv file with the columns: 
+# **sampleID,temperature,bondDuration,voltagePower,bondForce,**
+# **bondMiddle,bondedArea,bondItself,labels,heelDeformation,**
+# **centerDeformation,failureMode**
+# 
+# * sampleID - substrate number
+# * temperature - temperature at which bonds are made, in Celsius 
+# * bond duration - measured in miliseconds, duration of bonding
+# * voltage power - measured in volts, power used on bonds
+# * bond force - measured in gram force, force used on bonds
+# * bond middle - length (long) of deformation area of the ribbon
+# * bond area - length (long) of heat infected area of the ribbon
+# * bond itself - length of ribbon that isn't deformed
+# * labels - strength measurements, in grams, of the bonds
+# * heel deformation - percent change measurements of the deformation area of ribbon compared to undeformed ribbon
+# * center deformation - percent change measurements of the heat infected area of the ribbon compared to undeformed ribbon
+# * failure mode - noted failure mode of the ribbon during mechanical testing
+# 
+# Two models are run, where labels and failure mode are the labels, and the rest of the data (minus the sampleID) are the features.  Feature important plots and data mapping plots are included as well.
 
-# In[2]:
+# In[1]:
 
 import time
 import pandas as pd
@@ -14,31 +33,33 @@ import numpy as np
 import xgboost as xgb
 
 
-# In[3]:
+# In[2]:
 
 dfTrain = pd.read_csv('GBM Analysis - Sheet1.csv')
 labels = dfTrain['labels'].values
 
 
-# In[4]:
+# In[3]:
 
 dfTrain.info()
 
 
-# In[5]:
+# In[4]:
 
 le = LabelEncoder()
 dfTrain['failureMode'] = le.fit_transform(dfTrain['failureMode'])
 labelsFailureMode = dfTrain['failureMode'].values
 
 
-# In[6]:
+# Split the training and validating data for the model
+
+# In[5]:
 
 trainData, validateData = train_test_split(dfTrain, test_size=0.05,
                                            random_state=42)
 
 
-# In[7]:
+# In[6]:
 
 trainLabels = trainData['labels'].values
 validateLabels = validateData['labels'].values
@@ -50,15 +71,18 @@ validateLabelsFailureMode = validateData['failureMode'].values
 
 drop_var = ['sampleID', 'labels', 'failureMode']
 
+# Drop id column, and labels that are added later
 trainData = trainData.drop(drop_var, axis=1)
 validateData = validateData.drop(drop_var, axis=1)
 
+# These data matrices (trainDMatrix and validateDMatrix) are for the strength predictions 
 trainDMatrix = xgb.DMatrix(trainData.as_matrix(),
                            label=trainLabels.astype(int))
 
 validateDMatrix = xgb.DMatrix(validateData.as_matrix(),
                               label=validateLabels.astype(int))
 
+# These data matrices (trainDMatrixFailure and validateDMatrixFailure) are for the failure mode predictions 
 trainDMatrixFailure = xgb.DMatrix(trainData.as_matrix(),
                            label=trainLabelsFailureMode.astype(int))
 
@@ -66,16 +90,14 @@ validateDMatrixFailure = xgb.DMatrix(validateData.as_matrix(),
                            label=validateLabelsFailureMode.astype(int))
 
 
-# In[8]:
+# In[7]:
 
 validateData.info()
 
 
 # # Strength Prediction testing
-# 
-# ## Training Classifier for parameter tuning
 
-# In[9]:
+# In[8]:
 
 params = {
     'learning_rate'    : 0.038,
@@ -90,12 +112,12 @@ params = {
 }
 
 
-# In[10]:
+# In[9]:
 
 watchlist = [(trainDMatrix, 'train'), (trainDMatrix, 'eval')]
 
 
-# In[11]:
+# In[10]:
 
 start_time = time.time()
 clf = xgb.train(params, trainDMatrix, 210, evals=watchlist,
@@ -105,8 +127,9 @@ print((time.time() - start_time)/60)
 
 
 # ### Validation testing
+# Currently in progress to develop a new accuracy testing function
 
-# In[12]:
+# In[11]:
 
 # validate_label_predictions = clf.predict(validateDMatrix)
 # print(accuracy_score(validateLabels, validate_label_predictions.argmax(axis = 1)))
@@ -114,14 +137,14 @@ print((time.time() - start_time)/60)
 
 # ### Feature Importance Mapping
 
-# In[13]:
+# In[12]:
 
 import operator
 importances = clf.get_fscore()
 print(importances)
 
 
-# In[14]:
+# In[13]:
 
 import matplotlib.pyplot as plt
 # xgb.plot_importance(model)
@@ -135,15 +158,14 @@ plt.show()
 
 
 # # Failure Mode Prediction Testing
-# 
-# ## Training Classifier for parameter tuning
+# Currently, this model does not work well (93% inaccuracy) due to too much of the data consisting of heel break failure modes.  The model needs to have more data that consists of different failure modes.
 
-# In[15]:
+# In[14]:
 
 watchlist2 = [(trainDMatrixFailure, 'train'), (validateDMatrixFailure, 'eval')]
 
 
-# In[16]:
+# In[15]:
 
 start_time2 = time.time()
 clf2 = xgb.train(params, trainDMatrixFailure, 210, evals=watchlist,
@@ -152,14 +174,14 @@ print('Time taken to classify')
 print((time.time() - start_time2)/60)
 
 
-# In[17]:
+# In[16]:
 
 import operator
 importances = clf2.get_fscore()
 print(importances)
 
 
-# In[18]:
+# In[17]:
 
 import matplotlib.pyplot as plt
 # xgb.plot_importance(model)
@@ -172,47 +194,24 @@ xgb.plot_importance(mapped, color='red')
 plt.show()
 
 
-# In[19]:
+# In[18]:
 
 dfTrain.info()
 
 
-# In[20]:
+# # Data Visualization of Failure Modes
+# Data visualization of the parameters of bonding (bond duration, voltage power, and bond force) mapped to the failure mode.
 
-# from sklearn.cluster import KMeans
-# # bondDuration = dfTrain['bondDuration'].values
-# # voltagePower = dfTrain['voltagePower'].values
-# # bondForce = dfTrain['bondForce'].values
-# # strengthLabels = dfTrain.labels.values
-# data = dfTrain[['bondDuration','voltagePower','bondForce']].values
-# kmeans = KMeans(n_clusters=3).fit(data)
-
-
-# In[21]:
-
-# kmeans
-
-
-# In[22]:
-
-# print(kmeans.labels_)
-
-
-# In[23]:
-
-# print(dfTrain.failureMode.values)
-
-
-# In[24]:
+# In[19]:
 
 colormap = dfTrain[['failureMode']].copy()
 colormap.loc[colormap['failureMode'] == 0, 'failureMode'] = 'r' # foot lift
-colormap.loc[colormap['failureMode'] == 1, 'failureMode'] = 'g' # Heel Break
+colormap.loc[colormap['failureMode'] == 1, 'failureMode'] = 'k' # Heel Break
 colormap.loc[colormap['failureMode'] == 2, 'failureMode'] = 'b' # Ribbon Break
 print(colormap.failureMode.values)
 
 
-# In[25]:
+# In[20]:
 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -229,41 +228,36 @@ plt.show()
 print('red is foot lift, blue is heel break, green is heel break')
 
 
+# # Data Visualization of Strength
+# Data visualization of the parameters of bonding (bond duration, voltage power, and bond force) mapped to the strengths of bonds. 
+
 # In[28]:
-
-# from mpl_toolkits.mplot3d import Axes3D
-# import matplotlib.pyplot as plt
-# bondDuration = dfTrain['bondDuration'].values
-# voltagePower = dfTrain['voltagePower'].values
-# bondForce = dfTrain['bondForce'].values
-# fig = plt.figure()
-# ax = fig.gca(projection='3d')
-# ax.scatter(bondDuration, voltagePower, bondForce, color=colormap.failureMode.values.tolist())
-# ax.set_xlabel('Bond Duration')
-# ax.set_ylabel('Voltage Power')
-# ax.set_zlabel('Bond Force')
-# plt.show()
-# print('red is foot lift, blue is heel break, green is heel break')
-
-
-# In[60]:
 
 colormapStrengths = pd.DataFrame(labels, columns = ['strengths'])
 colormapStrengths['colors'] = np.zeros(len(colormapStrengths.strengths))
 
 
-# In[68]:
+# In[32]:
 
-colormapStrengths.loc[colormapStrengths['strengths'] < 10, 'colors'] = 'r'
-colormapStrengths.loc[colormapStrengths['strengths'] < 5, 'colors'] = 'gold'
-colormapStrengths.loc[colormapStrengths['strengths'] < 4, 'colors'] = 'dodgerblue'
-colormapStrengths.loc[colormapStrengths['strengths'] < 3, 'colors'] = 'g'
-colormapStrengths.loc[colormapStrengths['strengths'] < 2, 'colors'] = 'm'
-colormapStrengths.loc[colormapStrengths['strengths'] < 1, 'colors'] = 'indigo'
-colormapStrengths.loc[colormapStrengths['strengths'] < 0, 'colors'] = 'k'
+colormapStrengths.loc[colormapStrengths['strengths'] < 6, 'colors'] = 'r'
+colormapStrengths.loc[colormapStrengths['strengths'] < 3, 'colors'] = 'k'
+colormapStrengths.loc[colormapStrengths['strengths'] > 6, 'colors'] = 'b'
 
 
-# In[70]:
+# In[33]:
+
+# # # Old Colormap Scheme using six colors, given up on because it was too confusing
+# # new column of dataframe is written over based on the color correlating to the minimum strength
+# colormapStrengths.loc[colormapStrengths['strengths'] < 10, 'colors'] = 'r'
+# colormapStrengths.loc[colormapStrengths['strengths'] < 5, 'colors'] = 'gold'
+# colormapStrengths.loc[colormapStrengths['strengths'] < 4, 'colors'] = 'dodgerblue'
+# colormapStrengths.loc[colormapStrengths['strengths'] < 3, 'colors'] = 'g'
+# colormapStrengths.loc[colormapStrengths['strengths'] < 2, 'colors'] = 'm'
+# colormapStrengths.loc[colormapStrengths['strengths'] < 1, 'colors'] = 'indigo'
+# colormapStrengths.loc[colormapStrengths['strengths'] < 0, 'colors'] = 'k'
+
+
+# In[35]:
 
 fig = plt.figure()
 ax = fig.gca(projection='3d')
@@ -272,16 +266,6 @@ ax.set_xlabel('Bond Duration')
 ax.set_ylabel('Voltage Power')
 ax.set_zlabel('Bond Force')
 plt.show()
-print('red is greater than 6')
-print('gold is between 5 and 6')
-print('light blue is between 4 and 5')
-print('green is between 3 and 4')
-print('violet is between 2 and 3')
-print('indigo is between 1 and 2')
-print('black is less than 1')
-
-
-# In[ ]:
-
-
-
+print('black is greater than 3 grams')
+print('red is between 3 and 6 grams')
+print('blue is greater than 6 grams')
